@@ -6,6 +6,7 @@ import javax.microedition.khronos.egl.EGLDisplay;
 import javax.microedition.khronos.opengles.GL10;
 import javax.microedition.khronos.opengles.GL11;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.SurfaceTexture;
 import android.util.AttributeSet;
@@ -19,6 +20,7 @@ import com.eaglesakura.view.egl.SurfaceColorSpec;
 /**
  * {@link SurfaceView} -> {@link TextureView} OpenGL ES 1.1 or OpenGL ES 2.0
  */
+@SuppressLint("NewApi")
 public class GLTextureView extends TextureView implements TextureView.SurfaceTextureListener {
     static final String TAG = GLTextureView.class.getSimpleName();
 
