@@ -1,5 +1,8 @@
 package com.eaglesakura.view;
 
+import java.util.LinkedList;
+import java.util.Queue;
+
 import javax.microedition.khronos.egl.EGL10;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.egl.EGLDisplay;
@@ -87,6 +90,8 @@ public class GLTextureView extends TextureView implements TextureView.SurfaceTex
 	 */
 	int surfaceHeight = 0;
 
+	Queue<Runnable> queue = new LinkedList<Runnable>();
+
 	public GLTextureView(Context context) {
 		super(context);
 		setSurfaceTextureListener(this);
@@ -109,379 +114,386 @@ public class GLTextureView extends TextureView implements TextureView.SurfaceTex
 	/**
 	 * Activity#onPause() || Fragment#onPause()
 	 */
-	 public void onPause() {
-		 sleep = true;
-	 }
+	public void onPause() {
+		sleep = true;
+	}
 
-	 /**
-	  * Activity#onResume() || Fragment#onResume()
-	  */
-	 public void onResume() {
-		 sleep = false;
-	 }
+	/**
+	 * Activity#onResume() || Fragment#onResume()
+	 */
+	public void onResume() {
+		sleep = false;
+	}
 
-	 /**
-	  * check EGL Initialized
-	  * @return
-	  */
-	 public boolean isInitialized() {
-		 return initialized;
-	 }
+	/**
+	 * check EGL Initialized
+	 * @return
+	 */
+	public boolean isInitialized() {
+		return initialized;
+	}
 
-	 /**
-	  * 
-	  * @param renderer
-	  */
-	 public void setRenderer(Renderer renderer) {
-		 synchronized (lock) {
-			 if (isInitialized()) {
-				 throw new UnsupportedOperationException("GLTextureView Initialized");
-			 }
-			 this.renderer = renderer;
-		 }
-	 }
+	/**
+	 * 
+	 * @param renderer
+	 */
+	public void setRenderer(Renderer renderer) {
+		synchronized (lock) {
+			if (isInitialized()) {
+				throw new UnsupportedOperationException("GLTextureView Initialized");
+			}
+			this.renderer = renderer;
+		}
+	}
 
-	 /**
-	  * 
-	  * @param version
-	  */
-	 public void setVersion(GLESVersion version) {
-		 synchronized (lock) {
-			 if (isInitialized()) {
-				 throw new UnsupportedOperationException("GLTextureView Initialized");
-			 }
-			 this.version = version;
-		 }
-	 }
+	/**
+	 * 
+	 * @param version
+	 */
+	public void setVersion(GLESVersion version) {
+		synchronized (lock) {
+			if (isInitialized()) {
+				throw new UnsupportedOperationException("GLTextureView Initialized");
+			}
+			this.version = version;
+		}
+	}
 
-	 /**
-	  * EGL Config setup
-	  * @param color
-	  * @param hasDepth
-	  * @param hasStencil
-	  */
-	 public void setSurfaceSpec(SurfaceColorSpec color, boolean hasDepth, boolean hasStencil) {
-		 DefaultEGLConfigChooser chooser = new DefaultEGLConfigChooser();
-		 chooser.setColorSpec(color);
-		 chooser.setDepthEnable(hasDepth);
-		 chooser.setStencilEnable(hasStencil);
-		 setEGLConfigChooser(chooser);
-	 }
+	/**
+	 * EGL Config setup
+	 * @param color
+	 * @param hasDepth
+	 * @param hasStencil
+	 */
+	public void setSurfaceSpec(SurfaceColorSpec color, boolean hasDepth, boolean hasStencil) {
+		DefaultEGLConfigChooser chooser = new DefaultEGLConfigChooser();
+		chooser.setColorSpec(color);
+		chooser.setDepthEnable(hasDepth);
+		chooser.setStencilEnable(hasStencil);
+		setEGLConfigChooser(chooser);
+	}
 
-	 /**
-	  * Config Chooser
-	  * @param eglConfigChooser
-	  */
-	 public void setEGLConfigChooser(EGLConfigChooser eglConfigChooser) {
-		 synchronized (lock) {
-			 if (isInitialized()) {
-				 throw new UnsupportedOperationException("GLTextureView Initialized");
-			 }
-			 this.eglConfigChooser = eglConfigChooser;
-		 }
-	 }
+	/**
+	 * Config Chooser
+	 * @param eglConfigChooser
+	 */
+	public void setEGLConfigChooser(EGLConfigChooser eglConfigChooser) {
+		synchronized (lock) {
+			if (isInitialized()) {
+				throw new UnsupportedOperationException("GLTextureView Initialized");
+			}
+			this.eglConfigChooser = eglConfigChooser;
+		}
+	}
 
-	 /**
-	  * 
-	  * @param renderingThreadType
-	  */
-	 public void setRenderingThreadType(RenderingThreadType renderingThreadType) {
-		 synchronized (lock) {
-			 if (isInitialized()) {
-				 throw new UnsupportedOperationException("GLTextureView Initialized");
-			 }
+	/**
+	 * 
+	 * @param renderingThreadType
+	 */
+	public void setRenderingThreadType(RenderingThreadType renderingThreadType) {
+		synchronized (lock) {
+			if (isInitialized()) {
+				throw new UnsupportedOperationException("GLTextureView Initialized");
+			}
 
-			 this.renderingThreadType = renderingThreadType;
-		 }
-	 }
+			this.renderingThreadType = renderingThreadType;
+		}
+	}
 
-	 /**
-	  * start rendering
-	  * call {@link GLTextureView#onRendering()}
-	  * 
-	  */
-	 public void requestRender() {
-		 synchronized (lock) {
-			 if (!isInitialized()) {
-				 throw new UnsupportedOperationException("GLTextureView not initialized");
-			 }
+	/**
+	 * start rendering
+	 * call {@link GLTextureView#onRendering()}
+	 * 
+	 */
+	public void requestRender() {
+		synchronized (lock) {
+			if (!isInitialized()) {
+				throw new UnsupportedOperationException("GLTextureView not initialized");
+			}
 
-			 onRendering();
-		 }
-	 }
+			onRendering();
+		}
+	}
 
-	 /**
-	  * 
-	  * @param runnable
-	  */
-	 public void requestAction(Runnable runnable) {
-		 synchronized (lock) {
-			 if (!isInitialized()) {
-				 throw new UnsupportedOperationException("GLTextureView not initialized");
-			 }
+	/**
+	 * 
+	 * @param runnable
+	 */
+	public void requestAction(Runnable runnable) {
+		synchronized (lock) {
+			if (!isInitialized()) {
+				throw new UnsupportedOperationException("GLTextureView not initialized");
+			}
 
-			 eglManager.bind();
-			 runnable.run();
-			 eglManager.unbind();
-		 }
-	 }
+			eglManager.bind();
+			runnable.run();
+			eglManager.unbind();
+		}
+	}
 
-	 @Override
-	 public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
-		 synchronized (lock) {
+	public void queueEvent(Runnable runnable) {
+		synchronized(lock) {
+			queue.add(runnable);
+		}
+	}
 
-			 surfaceWidth = width;
-			 surfaceHeight = height;
+	@Override
+	public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
+		synchronized (lock) {
 
-			 if (!isInitialized()) {
-				 eglManager = new EGLManager();
+			surfaceWidth = width;
+			surfaceHeight = height;
 
-				 if (eglConfigChooser == null) {
-					 // make default spec
-					 // RGBA8 hasDepth hasStencil
-					 eglConfigChooser = new DefaultEGLConfigChooser();
-				 }
+			if (!isInitialized()) {
+				eglManager = new EGLManager();
 
-				 eglManager.initialize(eglConfigChooser, version);
+				if (eglConfigChooser == null) {
+					// make default spec
+					// RGBA8 hasDepth hasStencil
+					eglConfigChooser = new DefaultEGLConfigChooser();
+				}
 
-				 if (version == GLESVersion.OpenGLES11) {
-					 gl11 = eglManager.getGL11();
-				 }
+				eglManager.initialize(eglConfigChooser, version);
 
-				 eglManager.resize(surface);
+				if (version == GLESVersion.OpenGLES11) {
+					gl11 = eglManager.getGL11();
+				}
 
-				 if (renderingThreadType != RenderingThreadType.BackgroundThread) {
-					 // UIThread || request
-					 eglManager.bind();
-					 renderer.onSurfaceCreated(gl11, eglManager.getConfig());
-					 renderer.onSurfaceChanged(gl11, width, height);
-					 eglManager.unbind();
-				 }
-			 } else {
-				 eglManager.resize(surface);
+				eglManager.resize(surface);
 
-				 if (renderingThreadType != RenderingThreadType.BackgroundThread) {
-					 // UIThread || request
-					 eglManager.bind();
-					 renderer.onSurfaceChanged(gl11, width, height);
-					 eglManager.unbind();
-				 }
-			 }
+				if (renderingThreadType != RenderingThreadType.BackgroundThread) {
+					// UIThread || request
+					eglManager.bind();
+					renderer.onSurfaceCreated(gl11, eglManager.getConfig());
+					renderer.onSurfaceChanged(gl11, width, height);
+					eglManager.unbind();
+				}
+			} else {
+				eglManager.resize(surface);
 
-			 initialized = true;
-			 if (renderingThreadType == RenderingThreadType.BackgroundThread) {
-				 // background
-				 backgroundThread = createRenderingThread();
-				 backgroundThread.start();
-			 }
+				if (renderingThreadType != RenderingThreadType.BackgroundThread) {
+					// UIThread || request
+					eglManager.bind();
+					renderer.onSurfaceChanged(gl11, width, height);
+					eglManager.unbind();
+				}
+			}
 
-		 }
-	 }
+			initialized = true;
+			if (renderingThreadType == RenderingThreadType.BackgroundThread) {
+				// background
+				backgroundThread = createRenderingThread();
+				backgroundThread.start();
+			}
 
-	 @Override
-	 public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
-		 synchronized (lock) {
+		}
+	}
 
-			 surfaceWidth = width;
-			 surfaceHeight = height;
+	@Override
+	public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
+		synchronized (lock) {
 
-			 eglManager.resize(surface);
+			surfaceWidth = width;
+			surfaceHeight = height;
 
-			 if (renderingThreadType != RenderingThreadType.BackgroundThread) {
-				 // UIThread || request
-				 eglManager.bind();
-				 renderer.onSurfaceChanged(gl11, width, height);
-				 eglManager.unbind();
-			 }
-		 }
-	 }
+			eglManager.resize(surface);
 
-	 @Override
-	 public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
-		 destroyed = true;
-		 try {
-			 synchronized (lock) {
+			if (renderingThreadType != RenderingThreadType.BackgroundThread) {
+				// UIThread || request
+				eglManager.bind();
+				renderer.onSurfaceChanged(gl11, width, height);
+				eglManager.unbind();
+			}
+		}
+	}
 
-				 if (renderingThreadType != RenderingThreadType.BackgroundThread) {
-					 // UIThread || request
-					 eglManager.bind();
-					 renderer.onSurfaceDestroyed(gl11);
-					 eglManager.releaseThread();
-				 }
-			 }
+	@Override
+	public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
+		destroyed = true;
+		try {
+			synchronized (lock) {
 
-			 if (backgroundThread != null) {
-				 try {
-					 Log.d(TAG, "wait rendering thread");
-					 // wait background thread
-					 backgroundThread.join();
-				 } catch (Exception e) {
-					 e.printStackTrace();
-				 }
-			 }
-		 } finally {
-			 eglManager.destroy();
-		 }
+				if (renderingThreadType != RenderingThreadType.BackgroundThread) {
+					// UIThread || request
+					eglManager.bind();
+					renderer.onSurfaceDestroyed(gl11);
+					eglManager.releaseThread();
+				}
+			}
 
-		 // auto release
-		 return true;
+			if (backgroundThread != null) {
+				try {
+					Log.d(TAG, "wait rendering thread");
+					// wait background thread
+					backgroundThread.join();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		} finally {
+			eglManager.destroy();
+		}
 
-	 }
+		// auto release
+		return true;
 
-	 /**
-	  * 
-	  */
-	 @Override
-	 public void onSurfaceTextureUpdated(SurfaceTexture surface) {
-	 }
+	}
 
-	 /**
-	  * 
-	  */
-	 protected void onRendering() {
-		 eglManager.bind();
-		 {
-			 renderer.onDrawFrame(gl11);
-		 }
-		 eglManager.swapBuffers();
-		 eglManager.unbind();
-	 }
+	/**
+	 * 
+	 */
+	@Override
+	public void onSurfaceTextureUpdated(SurfaceTexture surface) {
+	}
 
-	 /**
-	  * OpenGL ES Version
-	  */
-	 public enum GLESVersion {
-		 /**
-		  * OpenGL ES 1.0
-		  */
-		 OpenGLES11 {
-			 @Override
-			 public int[] getContextAttributes() {
-				 return null;
-			 }
-		 },
+	/**
+	 * 
+	 */
+	protected void onRendering() {
+		eglManager.bind();
+		{
+			renderer.onDrawFrame(gl11);
+		}
+		eglManager.swapBuffers();
+		eglManager.unbind();
+	}
 
-		 /**
-		  * OpenGL ES 2.0
-		  */
-		 OpenGLES20 {
-			 @Override
-			 public int[] getContextAttributes() {
-				 return new int[] {
-						 0x3098 /* EGL_CONTEXT_CLIENT_VERSION */, 2, EGL10.EGL_NONE
-				 };
-			 }
-		 };
+	/**
+	 * OpenGL ES Version
+	 */
+	public enum GLESVersion {
+		/**
+		 * OpenGL ES 1.0
+		 */
+		OpenGLES11 {
+			@Override
+			public int[] getContextAttributes() {
+				return null;
+			}
+		},
 
-		 public abstract int[] getContextAttributes();
-	 }
+		/**
+		 * OpenGL ES 2.0
+		 */
+		OpenGLES20 {
+			@Override
+			public int[] getContextAttributes() {
+				return new int[] {
+						0x3098 /* EGL_CONTEXT_CLIENT_VERSION */, 2, EGL10.EGL_NONE
+				};
+			}
+		};
 
-	 /**
-	  * 
-	  */
-	 public interface EGLConfigChooser {
+		public abstract int[] getContextAttributes();
+	}
 
-		 /**
-		  * 
-		  * @return
-		  */
-		 public EGLConfig chooseConfig(EGL10 egl, EGLDisplay display, GLESVersion version);
-	 }
+	/**
+	 * 
+	 */
+	public interface EGLConfigChooser {
 
-	 /**
-	  * 
-	  */
-	 public interface Renderer {
-		 /**
-		  * created EGLSurface.
-		  * {@link #onSurfaceChanged(GL10, int, int)}
-		  */
-		 public void onSurfaceCreated(GL10 gl, EGLConfig config);
+		/**
+		 * 
+		 * @return
+		 */
+		public EGLConfig chooseConfig(EGL10 egl, EGLDisplay display, GLESVersion version);
+	}
 
-		 /**
-		  * remake EGLSurface.
-		  */
-		 public void onSurfaceChanged(GL10 gl, int width, int height);
+	/**
+	 * 
+	 */
+	public interface Renderer {
+		/**
+		 * created EGLSurface.
+		 * {@link #onSurfaceChanged(GL10, int, int)}
+		 */
+		public void onSurfaceCreated(GL10 gl, EGLConfig config);
 
-		 /**
-		  * rendering.
-		  */
-		 public void onDrawFrame(GL10 gl);
+		/**
+		 * remake EGLSurface.
+		 */
+		public void onSurfaceChanged(GL10 gl, int width, int height);
 
-		 /**
-		  * destroyed
-		  * @param gl
-		  */
-		 public void onSurfaceDestroyed(GL10 gl);
-	 }
+		/**
+		 * rendering.
+		 */
+		public void onDrawFrame(GL10 gl);
 
-	 public enum RenderingThreadType {
-		 /**
-		  * Rendering on Background Loop
-		  */
-		 BackgroundThread,
+		/**
+		 * destroyed
+		 * @param gl
+		 */
+		public void onSurfaceDestroyed(GL10 gl);
+	}
 
-		 /**
-		  * Rendering on {@link GLTextureView#requestRendering()}
-		  */
-		 RequestThread,
-	 }
+	public enum RenderingThreadType {
+		/**
+		 * Rendering on Background Loop
+		 */
+		BackgroundThread,
 
-	 protected Thread createRenderingThread() {
-		 return new Thread() {
-			 int width = 0;
-			 int height = 0;
+		/**
+		 * Rendering on {@link GLTextureView#requestRendering()}
+		 */
+		RequestThread,
+	}
 
-			 @Override
-			 public void run() {
-				 // created
-				 eglManager.bind();
-				 {
-					 renderer.onSurfaceCreated(gl11, eglManager.getConfig());
-				 }
-				 eglManager.unbind();
+	protected Thread createRenderingThread() {
+		return new Thread() {
+			int width = 0;
+			int height = 0;
 
-				 while (!destroyed) {
-					 int sleepTime = 1;
-					 if (!sleep) {
-						 synchronized (lock) {
-							 eglManager.bind();
+			@Override
+			public void run() {
+				// created
+				eglManager.bind();
+				{
+					renderer.onSurfaceCreated(gl11, eglManager.getConfig());
+				}
+				eglManager.unbind();
 
+				while (!destroyed) {
+					int sleepTime = 1;
+					if (!sleep) {
+						synchronized (lock) {
+							eglManager.bind();
 
+							while(!queue.isEmpty())
+								queue.poll().run();
 
-							 if (width != surfaceWidth || height != surfaceHeight) {
-								 width = surfaceWidth;
-								 height = surfaceHeight;
-								 renderer.onSurfaceChanged(gl11, width, height);
-							 }
+							if (width != surfaceWidth || height != surfaceHeight) {
+								width = surfaceWidth;
+								height = surfaceHeight;
+								renderer.onSurfaceChanged(gl11, width, height);
+							}
 
-							 renderer.onDrawFrame(gl11);
+							renderer.onDrawFrame(gl11);
 
-							 // post
-							 if (!destroyed) {
-								 eglManager.swapBuffers();
-							 }
-							 eglManager.unbind();
-						 }
-					 } else {
-						 sleepTime = 10;
-					 }
+							// post
+							if (!destroyed) {
+								eglManager.swapBuffers();
+							}
+							eglManager.unbind();
+						}
+					} else {
+						sleepTime = 10;
+					}
 
-					 try {
-						 // sleep rendering thread
-						 Thread.sleep(sleepTime);
-					 } catch (Exception e) {
-						 e.printStackTrace();
-					 }
-				 }
+					try {
+						// sleep rendering thread
+						Thread.sleep(sleepTime);
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
 
-				 // destroy
-				 synchronized (lock) {
-					 eglManager.bind();
-					 renderer.onSurfaceDestroyed(gl11);
-					 eglManager.releaseThread();
-				 }
-			 }
-		 };
-	 }
+				// destroy
+				synchronized (lock) {
+					eglManager.bind();
+					renderer.onSurfaceDestroyed(gl11);
+					eglManager.releaseThread();
+				}
+			}
+		};
+	}
 }
