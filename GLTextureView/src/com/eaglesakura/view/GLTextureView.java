@@ -332,6 +332,7 @@ public class GLTextureView extends TextureView implements TextureView.SurfaceTex
 			}
 		} finally {
 			eglManager.destroy();
+			initialized = false;
 		}
 
 		// auto release
