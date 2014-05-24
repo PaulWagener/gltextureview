@@ -327,6 +327,7 @@ public class GLTextureView extends TextureView implements TextureView.SurfaceTex
 					Log.d(TAG, "wait rendering thread");
 					// wait background thread
 					backgroundThread.join();
+					backgroundThread = null;
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
