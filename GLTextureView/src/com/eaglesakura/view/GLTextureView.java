@@ -280,6 +280,7 @@ public class GLTextureView extends TextureView implements TextureView.SurfaceTex
 			}
 
 			initialized = true;
+			destroyed = false;
 			if (renderingThreadType == RenderingThreadType.BackgroundThread) {
 				// background
 				backgroundThread = createRenderingThread();
