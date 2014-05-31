@@ -1,5 +1,9 @@
 package com.eaglesakura.view.egl;
 
+import static javax.microedition.khronos.egl.EGL10.EGL_HEIGHT;
+import static javax.microedition.khronos.egl.EGL10.EGL_NONE;
+import static javax.microedition.khronos.egl.EGL10.EGL_WIDTH;
+
 import javax.microedition.khronos.egl.EGL10;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.egl.EGLContext;
@@ -14,232 +18,251 @@ import com.eaglesakura.view.GLTextureView.EGLConfigChooser;
 import com.eaglesakura.view.GLTextureView.GLESVersion;
 
 public class EGLManager {
-    /**
-     * ロックオブジェクト
-     */
-    final private Object lock = new Object();
+	/**
+	 * ���������������������������
+	 */
+	final private Object lock = new Object();
 
-    /**
-     * EGLオブジェクト
-     */
-    EGL10 egl = null;
+	/**
+	 * EGL������������������
+	 */
+	EGL10 egl = null;
 
-    /**
-     * レンダリング用ディスプレイ
-     */
-    EGLDisplay eglDisplay = null;
+	/**
+	 * ���������������������������������������
+	 */
+	EGLDisplay eglDisplay = null;
 
-    /**
-     * レンダリング用サーフェイス
-     */
-    EGLSurface eglSurface = null;
+	/**
+	 * ���������������������������������������
+	 */
+	EGLSurface eglSurface = null;
 
-    /**
-     * レンダリング用コンテキスト
-     */
-    EGLContext eglContext = null;
+	/**
+	 * ���������������������������������������
+	 */
+	EGLContext eglContext = null;
 
-    /**
-     * config情報
-     */
-    EGLConfig eglConfig = null;
+	/**
+	 * config������
+	 */
+	EGLConfig eglConfig = null;
 
-    /**
-     * システムがデフォルトで使用しているEGLDisplayオブジェクト
-     */
-    EGLDisplay systemDisplay = null;
+	/**
+	 * ���������������������������������������������������EGLDisplay������������
+	 * ������
+	 */
+	EGLDisplay systemDisplay = null;
 
-    /**
-     * システムがデフォルトで使用しているEGLSurface(Read)
-     */
-    EGLSurface systemReadSurface = null;
+	/**
+	 * ���������������������������������������������������EGLSurface(Read)
+	 */
+	EGLSurface systemReadSurface = null;
 
-    /**
-     * システムがデフォルトで使用しているEGLSurface(Draw)
-     */
-    EGLSurface systemDrawSurface = null;
+	/**
+	 * ���������������������������������������������������EGLSurface(Draw)
+	 */
+	EGLSurface systemDrawSurface = null;
 
-    /**
-     * システムがデフォルトで使用しているコンテキスト
-     */
-    EGLContext systemContext = null;
+	/**
+	 * ���������������������������������������������������������������������
+	 */
+	EGLContext systemContext = null;
 
-    /**
-     * GL10 object
-     * only OpenGL ES 1.1
-     */
-    GL11 gl11 = null;
+	/**
+	 * GL10 object only OpenGL ES 1.1
+	 */
+	GL11 gl11 = null;
 
-    public EGLManager() {
-    }
+	public EGLManager() {
+	}
 
-    /**
-     * 初期化を行う
-     */
-    public void initialize(final EGLConfigChooser chooser, final GLESVersion version) {
-        synchronized (lock) {
-            if (egl != null) {
-                throw new RuntimeException("initialized");
-            }
+	/**
+	 * ������������������
+	 */
+	public void initialize(final EGLConfigChooser chooser,
+			final GLESVersion version) {
+		synchronized (lock) {
+			if (egl != null) {
+				throw new RuntimeException("initialized");
+			}
 
-            egl = (EGL10) EGLContext.getEGL();
+			egl = (EGL10) EGLContext.getEGL();
 
-            // システムのデフォルトオブジェクトを取り出す
-            {
-                systemDisplay = egl.eglGetCurrentDisplay();
-                systemReadSurface = egl.eglGetCurrentSurface(EGL10.EGL_READ);
-                systemDrawSurface = egl.eglGetCurrentSurface(EGL10.EGL_DRAW);
-                systemContext = egl.eglGetCurrentContext();
-            }
+			// ���������������������������������������������������������������
+			{
+				systemDisplay = egl.eglGetCurrentDisplay();
+				systemReadSurface = egl.eglGetCurrentSurface(EGL10.EGL_READ);
+				systemDrawSurface = egl.eglGetCurrentSurface(EGL10.EGL_DRAW);
+				systemContext = egl.eglGetCurrentContext();
+			}
 
-            // ディスプレイ作成
-            {
-                eglDisplay = egl.eglGetDisplay(EGL10.EGL_DEFAULT_DISPLAY);
-                if (eglDisplay == EGL10.EGL_NO_DISPLAY) {
-                    throw new RuntimeException("EGL_NO_DISPLAY");
-                }
+			// ������������������������
+			{
+				eglDisplay = egl.eglGetDisplay(EGL10.EGL_DEFAULT_DISPLAY);
+				if (eglDisplay == EGL10.EGL_NO_DISPLAY) {
+					throw new RuntimeException("EGL_NO_DISPLAY");
+				}
 
-                if (!egl.eglInitialize(eglDisplay, new int[2])) {
-                    throw new RuntimeException("eglInitialize");
-                }
-            }
-            // コンフィグ取得
-            {
-                eglConfig = chooser.chooseConfig(egl, eglDisplay, version);
-                if (eglConfig == null) {
-                    throw new RuntimeException("chooseConfig");
-                }
-            }
+				if (!egl.eglInitialize(eglDisplay, new int[2])) {
+					throw new RuntimeException("eglInitialize");
+				}
+			}
+			// ���������������������
+			{
+				eglConfig = chooser.chooseConfig(egl, eglDisplay, version);
+				if (eglConfig == null) {
+					throw new RuntimeException("chooseConfig");
+				}
+			}
 
-            // コンテキスト作成
-            {
-                eglContext = egl.eglCreateContext(eglDisplay, eglConfig, EGL10.EGL_NO_CONTEXT,
-                        version.getContextAttributes());
+			// ������������������������
+			{
+				eglContext = egl.eglCreateContext(eglDisplay, eglConfig,
+						EGL10.EGL_NO_CONTEXT, version.getContextAttributes());
 
-                if (eglContext == EGL10.EGL_NO_CONTEXT) {
-                    throw new RuntimeException("eglCreateContext");
-                }
-            }
+				if (eglContext == EGL10.EGL_NO_CONTEXT) {
+					throw new RuntimeException("eglCreateContext");
+				}
+			}
 
-            if (version == GLESVersion.OpenGLES11) {
-                gl11 = (GL11) eglContext.getGL();
-            }
-        }
-    }
+			if (version == GLESVersion.OpenGLES11) {
+				gl11 = (GL11) eglContext.getGL();
+			}
+		}
+	}
 
-    /**
-     * get GL11 object
-     * @return
-     */
-    public GL11 getGL11() {
-        if (gl11 == null) {
-            throw new UnsupportedOperationException("OpenGL ES 1.1 only");
-        }
-        return gl11;
-    }
+	/**
+	 * get GL11 object
+	 * 
+	 * @return
+	 */
+	public GL11 getGL11() {
+		if (gl11 == null) {
+			throw new UnsupportedOperationException("OpenGL ES 1.1 only");
+		}
+		return gl11;
+	}
 
-    public EGLConfig getConfig() {
-        return eglConfig;
-    }
+	public EGLConfig getConfig() {
+		return eglConfig;
+	}
 
-    public EGLSurface getSurface() {
-        return eglSurface;
-    }
+	public EGLSurface getSurface() {
+		return eglSurface;
+	}
 
-    public EGLContext getContext() {
-        return eglContext;
-    }
+	public EGLContext getContext() {
+		return eglContext;
+	}
 
-    /**
-     * リサイズを行う
-     * @param view
-     */
-    public void resize(SurfaceTexture surface) {
-        synchronized (lock) {
-            // 既にサーフェイスが存在する場合は廃棄する
-            if (eglSurface != null) {
-                egl.eglDestroySurface(eglDisplay, eglSurface);
-            }
+	/**
+	 * ���������������������
+	 * 
+	 * @param view
+	 */
+	public void resize(SurfaceTexture surface) {
+		synchronized (lock) {
+			// ������������������������������������������������������������
+			if (eglSurface != null) {
+				egl.eglDestroySurface(eglDisplay, eglSurface);
+			}
 
-            // レンダリング用サーフェイスを再度生成
-            {
-                eglSurface = egl.eglCreateWindowSurface(eglDisplay, eglConfig, surface, null);
-                if (eglSurface == EGL10.EGL_NO_SURFACE) {
-                    throw new RuntimeException("eglCreateWindowSurface");
-                }
-            }
-        }
-    }
+			// ������������������������������������������������������
+			{
+				eglSurface = egl.eglCreateWindowSurface(eglDisplay, eglConfig,
+						surface, null);
+				if (eglSurface == EGL10.EGL_NO_SURFACE) {
+					throw new RuntimeException("eglCreateWindowSurface");
+				}
+			}
+		}
+	}
 
-    /**
-     * 解放処理を行う
-     */
-    public void destroy() {
-        synchronized (lock) {
-            if (egl == null) {
-                return;
-            }
+	public void pbuffer(int width, int height) {
+		int[] attribList = new int[] { EGL_WIDTH, width, EGL_HEIGHT, height,
+				EGL_NONE };
+		eglSurface = egl.eglCreatePbufferSurface(eglDisplay, eglConfig,
+				attribList);
+		if (eglSurface == EGL10.EGL_NO_SURFACE) {
+			throw new RuntimeException("eglCreatePbufferSurface");
+		}
+	}
 
-            if (eglSurface != null) {
-                egl.eglDestroySurface(eglDisplay, eglSurface);
-                eglSurface = null;
-            }
-            if (eglContext != null) {
-                egl.eglDestroyContext(eglDisplay, eglContext);
-                eglContext = null;
-            }
-            eglConfig = null;
-            egl = null;
-        }
-    }
+	/**
+	 * ���������������������
+	 */
+	public void destroy() {
+		synchronized (lock) {
+			if (egl == null) {
+				return;
+			}
 
-    /**
-     * ES20コンテキストを専有する
-     */
-    public void bind() {
-        synchronized (lock) {
-            egl.eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext);
-        }
-    }
+			if (eglSurface != null) {
+				egl.eglDestroySurface(eglDisplay, eglSurface);
+				eglSurface = null;
+			}
+			if (eglContext != null) {
+				egl.eglDestroyContext(eglDisplay, eglContext);
+				eglContext = null;
+			}
+			eglConfig = null;
+			egl = null;
+		}
+	}
 
-    /**
-     * UIスレッドで呼び出された場合trueを返す。
-     * @return
-     */
-    public boolean isUIThread() {
-        return Thread.currentThread().equals(Looper.getMainLooper().getThread());
-    }
+	/**
+	 * ES20���������������������������������
+	 */
+	public void bind() {
+		synchronized (lock) {
+			egl.eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext);
+		}
+	}
 
-    /**
-     * コンテキストの専有を解除する
-     */
-    public void unbind() {
-        synchronized (lock) {
-            if (isUIThread()) {
-                // UIスレッドならばシステムのデフォルトへ返す
-                egl.eglMakeCurrent(systemDisplay, systemDrawSurface, systemReadSurface, systemContext);
-            } else {
-                // それ以外ならば、null状態に戻す
-                egl.eglMakeCurrent(eglDisplay, EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_CONTEXT);
-            }
-        }
-    }
+	/**
+	 * UI���������������������������������������true������������
+	 * 
+	 * @return
+	 */
+	public boolean isUIThread() {
+		return Thread.currentThread()
+				.equals(Looper.getMainLooper().getThread());
+	}
 
-    /**
-     * 最後のリリースタイミングではNO_SURFACEで問題ない。
-     */
-    public void releaseThread() {
-        synchronized (lock) {
-            egl.eglMakeCurrent(eglDisplay, EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_CONTEXT);
-        }
-    }
+	/**
+	 * ������������������������������������������
+	 */
+	public void unbind() {
+		synchronized (lock) {
+			if (isUIThread()) {
+				// UI������������������������������������������������������������
+				egl.eglMakeCurrent(systemDisplay, systemDrawSurface,
+						systemReadSurface, systemContext);
+			} else {
+				// ������������������������null���������������
+				egl.eglMakeCurrent(eglDisplay, EGL10.EGL_NO_SURFACE,
+						EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_CONTEXT);
+			}
+		}
+	}
 
-    /**
-     * レンダリング内容をフロントバッファへ転送する
-     */
-    public boolean swapBuffers() {
-        synchronized (lock) {
-            return egl.eglSwapBuffers(eglDisplay, eglSurface);
-        }
-    }
+	/**
+	 * ������������������������������������������NO_SURFACE������������������
+	 */
+	public void releaseThread() {
+		synchronized (lock) {
+			egl.eglMakeCurrent(eglDisplay, EGL10.EGL_NO_SURFACE,
+					EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_CONTEXT);
+		}
+	}
+
+	/**
+	 * ������������������������������������������������������������������
+	 */
+	public boolean swapBuffers() {
+		synchronized (lock) {
+			return egl.eglSwapBuffers(eglDisplay, eglSurface);
+		}
+	}
 }
